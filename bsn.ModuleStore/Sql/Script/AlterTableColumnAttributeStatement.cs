@@ -1,0 +1,20 @@
+using System;
+
+using bsn.ModuleStore.Sql.Script.Tokens;
+
+namespace bsn.ModuleStore.Sql.Script {
+	public class AlterTableColumnAttributeStatement: AlterTableColumnStatement {
+		private readonly DdlOperation ddlOperation;
+
+		protected AlterTableColumnAttributeStatement(TableName tableName, ColumnName columnName, DdlOperationToken ddlOperationToken): base(tableName, columnName) {
+			if (ddlOperationToken == null) {
+				throw new ArgumentNullException("ddlOperationToken");
+			}
+			ddlOperation = ddlOperationToken.Operation;
+		}
+
+		public override void ApplyTo(CreateTableStatement createTable) {
+			throw new NotImplementedException();
+		}
+	}
+}
