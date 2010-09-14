@@ -1,0 +1,1165 @@
+﻿! -----------------------------------------------------------------------------------
+! T-SQL Script Analyzer
+! -----------------------------------------------------------------------------------
+
+"Name"         = 'T-SQL CREATE Statements'
+"Version"      = '2005'
+"About"        = 'Parser for T-SQL subset to be supported by ModuleStore'
+"Author"       = 'Arsène von Wyss'
+
+"Character Mapping" = 'Unicode'
+
+"Start Symbol" = <StatementList>
+
+! CLR UDTs are missing, but may be implemented later
+
+! =============================================================================
+! Comments
+! =============================================================================
+
+Comment Start = '/*'
+Comment End   = '*/'
+Comment Line  = '--'
+
+! =============================================================================
+! Terminals
+! =============================================================================
+
+{Any Ch}                        = {All Valid} - {Control Codes}
+{String Ch}                     = {Any Ch} - ['']
+{Id Ch Standard}                = {Alphanumeric} + [_]
+{Id Ch Delimited Bracket}       = {Any Ch} - ['['']']
+{Id Ch Delimited Bracket Start} = {Id Ch Delimited Bracket} - [#]
+{Id Ch Delimited Quote}         = {Any Ch} - ["#]
+{Id Ch Delimited Quote Start}   = {Id Ch Delimited Quote} - [#]
+{Hex Ch}                        = [0123456789ABCDEF]
+{Nonspace Ch}                   = {Any Ch} - {Whitespace}
+
+StringLiteral  = N?(''{String Ch}*'')+
+IntegerLiteral = {Digit}+
+RealLiteral    = {Digit}+'.'{Digit}+
+HexLiteral     = 0x{Hex Ch}+
+
+! We use a simplified name convention, which does not allow user/schema, database or server to be specified
+Id           = {Letter}{Id Ch Standard}* | '['{Id Ch Delimited Bracket Start}{Id Ch Delimited Bracket}*']' | '"'{Id Ch Delimited Quote Start}{Id Ch Delimited Quote}*'"'
+LocalId      = '@'{Letter}{Id Ch Standard}*
+SystemVarId  = '@@'{Letter}{Id Ch Standard}*
+SystemFuncId = '::'{Letter}{Id Ch Standard}*
+TempTableId  = '#'{Letter}{Id Ch Standard}* | '[#'{Id Ch Delimited Bracket}+']' | '"#'{Id Ch Delimited Quote}+'"'
+
+! The reserved keywords as per MSDN: http://msdn.microsoft.com/en-us/library/ms189822.aspx
+! By specifying them explicitly here, we should not see those in the log as implicit when generating the grammar tables, and the unsed ones are still reserved keywords
+ADD = ADD
+EXISTS = EXISTS
+PRECISION = PRECISION
+ALL = ALL
+EXIT = EXIT
+PRIMARY = PRIMARY
+ALTER = ALTER
+EXTERNAL = EXTERNAL
+PRINT = PRINT
+AND = AND
+FETCH = FETCH
+! PROC = PROC -- is covered by PROCEDURE
+ANY = ANY
+FILE = FILE
+PROCEDURE = PROC(EDURE)?
+AS = AS
+FILLFACTOR = FILLFACTOR
+PUBLIC = PUBLIC
+ASC = ASC
+FOR = FOR
+RAISERROR = RAISERROR
+AUTHORIZATION = AUTHORIZATION
+FOREIGN = FOREIGN
+READ = READ
+BACKUP = BACKUP
+FREETEXT = FREETEXT
+READTEXT = READTEXT
+BEGIN = BEGIN
+FREETEXTTABLE = FREETEXTTABLE
+RECONFIGURE = RECONFIGURE
+BETWEEN = BETWEEN
+FROM = FROM
+REFERENCES = REFERENCES
+BREAK = BREAK
+FULL = FULL
+REPLICATION = REPLICATION
+BROWSE = BROWSE
+FUNCTION = FUNCTION
+RESTORE = RESTORE
+BULK = BULK
+GOTO = GOTO
+RESTRICT = RESTRICT
+BY = BY
+GRANT = GRANT
+RETURN = RETURN
+CASCADE = CASCADE
+GROUP = GROUP
+REVERT = REVERT
+CASE = CASE
+HAVING = HAVING
+REVOKE = REVOKE
+CHECK = CHECK
+HOLDLOCK = HOLDLOCK
+RIGHT = RIGHT
+CHECKPOINT = CHECKPOINT
+IDENTITY = IDENTITY
+ROLLBACK = ROLLBACK
+CLOSE = CLOSE
+IDENTITY_INSERT = IDENTITY_INSERT
+ROWCOUNT = ROWCOUNT
+CLUSTERED = CLUSTERED
+IDENTITYCOL = IDENTITYCOL
+ROWGUIDCOL = ROWGUIDCOL
+COALESCE = COALESCE
+IF = IF
+RULE = RULE
+COLLATE = COLLATE
+IN = IN
+SAVE = SAVE
+COLUMN = COLUMN
+INDEX = INDEX
+SCHEMA = SCHEMA
+COMMIT = COMMIT
+INNER = INNER
+SECURITYAUDIT = SECURITYAUDIT
+COMPUTE = COMPUTE
+INSERT = INSERT
+SELECT = SELECT
+CONSTRAINT = CONSTRAINT
+INTERSECT = INTERSECT
+SESSION_USER = SESSION_USER
+CONTAINS = CONTAINS
+INTO = INTO
+SET = SET
+CONTAINSTABLE = CONTAINSTABLE
+IS = IS
+SETUSER = SETUSER
+CONTINUE = CONTINUE
+JOIN = JOIN
+SHUTDOWN = SHUTDOWN
+CONVERT = CONVERT
+KEY = KEY
+SOME = SOME
+CREATE = CREATE
+KILL = KILL
+STATISTICS = STATISTICS
+CROSS = CROSS
+LEFT = LEFT
+SYSTEM_USER = SYSTEM_USER
+CURRENT = CURRENT
+LIKE = LIKE
+TABLE = TABLE
+CURRENT_DATE = CURRENT_DATE
+LINENO = LINENO
+TABLESAMPLE = TABLESAMPLE
+CURRENT_TIME = CURRENT_TIME
+LOAD = LOAD
+TEXTSIZE = TEXTSIZE
+CURRENT_TIMESTAMP = CURRENT_TIMESTAMP
+MERGE = MERGE
+THEN = THEN
+CURRENT_USER = CURRENT_USER
+NATIONAL = NATIONAL
+TO = TO
+CURSOR = CURSOR
+NOCHECK = NOCHECK
+TOP = TOP
+DATABASE = DATABASE
+NONCLUSTERED = NONCLUSTERED
+TRAN = TRAN
+DBCC = DBCC
+NOT = NOT
+TRANSACTION = TRANSACTION
+DEALLOCATE = DEALLOCATE
+NULL = NULL
+TRIGGER = TRIGGER
+DECLARE = DECLARE
+NULLIF = NULLIF
+TRUNCATE = TRUNCATE
+DEFAULT = DEFAULT
+OF = OF
+TSEQUAL = TSEQUAL
+DELETE = DELETE
+OFF = OFF
+UNION = UNION
+DENY = DENY
+OFFSETS = OFFSETS
+UNIQUE = UNIQUE
+DESC = DESC
+ON = ON
+UNPIVOT = UNPIVOT
+DISK = DISK
+OPEN = OPEN
+UPDATE = UPDATE
+DISTINCT = DISTINCT
+OPENDATASOURCE = OPENDATASOURCE
+UPDATETEXT = UPDATETEXT
+DISTRIBUTED = DISTRIBUTED
+OPENQUERY = OPENQUERY
+USE = USE
+DOUBLE = DOUBLE
+OPENROWSET = OPENROWSET
+USER = USER
+DROP = DROP
+OPENXML = OPENXML
+VALUES = VALUES
+DUMP = DUMP
+OPTION = OPTION
+VARYING = VARYING
+ELSE = ELSE
+OR = OR
+VIEW = VIEW
+END = END
+ORDER = ORDER
+WAITFOR = WAITFOR
+ERRLVL = ERRLVL
+OUTER = OUTER
+WHEN = WHEN
+ESCAPE = ESCAPE
+OVER = OVER
+WHERE = WHERE
+EXCEPT = EXCEPT
+PERCENT = PERCENT
+WHILE = WHILE
+! EXEC = EXEC -- is covered by EXECUTE
+PIVOT = PIVOT
+WITH = WITH
+EXECUTE = EXEC(UTE)?
+PLAN = PLAN
+WRITETEXT = WRITETEXT
+
+! Compound reserved words to keep the grammar context-free
+RETURNS_NULL_ON_NULL_INPUT = RETURNS{Whitespace}+NULL{Whitespace}+ON{Whitespace}+NULL{Whitespace}+INPUT
+CALLED_ON_NULL_INPUT = CALLED{Whitespace}+ON{Whitespace}+NULL{Whitespace}+INPUT
+FOR_XML_AUTO = FOR{Whitespace}+XML{Whitespace}+AUTO
+FOR_XML_RAW = FOR{Whitespace}+XML{Whitespace}+RAW
+FOR_XML_EXPLICIT = FOR{Whitespace}+XML{Whitespace}+EXPLICIT
+FOR_XML_PATH = FOR{Whitespace}+XML{Whitespace}+PATH
+FOR_PATH = FOR{Whitespace}+PATH
+FOR_UPDATE = FOR{Whitespace}+UPDATE
+FOR_VALUE = FOR{Whitespace}+VALUE
+FOR_PROPERTY = FOR{Whitespace}+PROPERTY
+FOR_REPLICATION = FOR{Whitespace}+REPLICATION
+XML_INDEX = XML{Whitespace}+INDEX
+XML_SCHEMA_COLLECTION = XML{Whitespace}+SCHEMA{Whitespace}+COLLECTION
+USING_XML_INDEX = USING{Whitespace}+XML{Whitespace}+INDEX
+WITH_CHANGE_TRACKING = WITH{Whitespace}+CHANGE_TRACKING
+WITH_RECOMPILE = WITH{Whitespace}+RECOMPILE
+WITH_TIES = WITH{Whitespace}+TIES
+WITH_VIEW_METADATA = WITH{Whitespace}+VIEW_METADATA
+WITH_CHECK_OPTION = WITH{Whitespace}+CHECK{Whitespace}+OPTION
+ENABLE_TRIGGER = ENABLE{Whitespace}+TRIGGER
+DISABLE_TRIGGER = DISABLE{Whitespace}+TRIGGER
+ADD_PERSISTED = ADD{Whitespace}+PERSISTED
+DROP_PERSISTED = DROP{Whitespace}+PERSISTED
+BEGIN_TRY = BEGIN{Whitespace}+TRY
+END_TRY = END{Whitespace}+TRY
+BEGIN_CATCH = BEGIN{Whitespace}+CATCH
+END_CATCH = END{Whitespace}+CATCH
+FULLTEXT_INDEX = FULLTEXT{Whitespace}+INDEX
+WITH_FILLFACTOR = WITH{Whitespace}+FILLFACTOR
+READ_ONLY = READ{Whitespace}+ONLY
+NO_POPULATION = NO{Whitespace}+POPULATION
+NO_ACTION = NO{Whitespace}+ACTION
+TYPE_COLUMN = TYPE{Whitespace}+COLUMN
+PARTITION_BY = PARTITION{Whitespace}+BY
+INSTEAD_OF = INSTEAD{Whitespace}+OF
+INCLUDE_ = INCLUDE{Whitespace}*'('
+COUNT_ = COUNT{Whitespace}*'('
+CAST_ = CAST{Whitespace}*'('
+_RETURNS = ')'{Whitespace}*RETURNS
+LANGUAGE_LCID = LANGUAGE{Whitespace}+(0x{Hex Ch}+|{Digit}+|(''{String Ch}+'')+)
+OUTPUT = OUT(PUT)?
+OPTION_MAXRECURSION = OPTION{Whitespace}*'('{Whitespace}*MAXRECURSION
+ALL_SERVER = ALL{Whitespace}+SERVER
+
+! =============================================================================
+! Common Terminals (Names, Literals, ...)
+! =============================================================================
+
+<AliasName> ::= Id
+
+<CollationName> ::= Id
+
+<ColumnName> ::= Id
+
+<ColumnNameQualified> ::= <ColumnName>
+                        | <TableName> '.' <ColumnName>
+                        | <VariableName> '.' <ColumnName>
+
+<ColumnNameList> ::= <ColumnName> ',' <ColumnNameList>
+                   | <ColumnName>
+
+<ColumnWild> ::= '*'
+
+<ColumnWildQualified> ::= <ColumnWild>
+                        | <TableName> '.' <ColumnWild>
+                        | <VariableName> '.' <ColumnWild>
+
+<ColumnWildNameQualified> ::= <ColumnNameQualified>
+                            | <ColumnWildQualified>
+
+<ConstraintName> ::= Id
+
+<CursorName> ::= Id
+
+<FunctionName> ::= Id
+                 | SystemFuncId
+
+<FunctionNameQualified> ::= <FunctionName>
+                          | <SchemaName> '.' <FunctionName>
+
+<IndexName> ::= Id
+
+<LabelName> ::= Id
+
+<ParameterName> ::= LocalId
+
+<ProcedureName> ::= Id
+
+<ProcedureNameQualified> ::= <ProcedureName>
+                           | <SchemaName> '.' <ProcedureName>
+
+<TableName> ::= Id
+              | TempTableId
+
+<TableNameQualified> ::= <TableName>
+                       | <SchemaName> '.' <TableName>
+
+<TriggerName> ::= Id
+
+<TriggerNameQualified> ::= <TriggerName>
+                         | <SchemaName> '.' <TriggerName>
+
+<TypeName> ::= Id
+             | Id '(' Id ')' ! e.g. VARCHAR(MAX)
+             | Id '(' <IntegerLiteral> ')' ! e.g. VARCHAR(20)
+             | Id '(' <IntegerLiteral> ',' <IntegerLiteral> ')' ! e.g. DECIMAL(10,5)
+
+<TypeNameQualified> ::= <TypeName>
+                      | <SchemaName> '.' <TypeName>
+
+<SchemaName> ::= Id
+
+<SystemVariableName> ::= SystemVarId
+
+<VariableName> ::= LocalId
+
+<ViewName> ::= Id
+
+<ViewNameQualified> ::= <ViewName>
+                      | <SchemaName> '.' <ViewName>
+
+<XmlSchemaCollectionName> ::= Id
+
+<XmlSchemaCollectionNameQualified> ::= <XmlSchemaCollectionName>
+                                     | <SchemaName> '.' <XmlSchemaCollectionName>
+
+<OptionalAs> ::= AS
+               |
+
+<StringLiteral> ::= StringLiteral
+
+<CollableStringLiteral> ::= StringLiteral COLLATE <CollationName>
+                          | <StringLiteral>
+
+<IntegerLiteral> ::= IntegerLiteral
+                   | HexLiteral
+
+<NumberLiteral> ::= <IntegerLiteral>
+                  | RealLiteral
+
+<NullLiteral> ::= NULL
+
+<Literal> ::= <NumberLiteral>
+            | <CollableStringLiteral>
+            | <NullLiteral>
+
+<Toggle> ::= ON
+           | OFF
+
+! =============================================================================
+! Any statements allowed as SQL statements in code
+! =============================================================================
+
+! In T-SQL, the terminator (;) is usually not required. However, this introduces some ambiguities, so that we require it. 
+
+<StatementGroup> ::= <StatementBlock>
+                   | <Statement> 
+
+<StatementBlock> ::= BEGIN <StatementList> END
+
+<StatementList> ::= <StatementGroup>
+                  | <StatementGroup> <Terminator>
+                  | <StatementGroup> <Terminator> <StatementList>
+
+<Terminator> ::= <Terminator> ';'
+               | ';'
+
+<Statement> ::= <DDLStatement>
+              | <DMLStatement>
+              | <PrgStatement>
+
+<DDLStatement> ::= <CreateFulltextStatement>
+                 | <DropFulltextStatement>
+                 | <CreateFunctionStatement>
+                 | <DropFunctionStatement>
+                 | <CreateIndexStatement>
+                 | <DropIndexStatement>
+                 | <CreateProcedureStatement>
+                 | <DropProcedureStatement>
+                 | <CreateTableStatement>
+                 | <AlterTableStatement> ! We don't need anything but this to handle data update scripts
+                 | <DropTableStatement>
+                 | <CreateTriggerStatement>
+                 | <EnableTriggerStatement>
+                 | <DisableTriggerStatement>
+                 | <DropTriggerStatement>
+                 | <CreateViewStatement>
+                 | <DropViewStatement>
+                 | <CreateXmlSchemaCollectionStatement>
+                 | <DropXmlSchemaCollectionStatement>
+
+<DMLStatement> ::= <SelectStatement>
+                 | <InsertStatement>
+                 | <UpdateStatement>
+                 | <DeleteStatement>
+
+<PrgStatement> ::= <AnyStatement>
+                 | <BreakStatement>
+                 | <CloseStatement>
+                 | <ContinueStatement>
+                 | <DeallocateStatement>
+                 | <DeclareStatement>
+                 | <ExecuteStatement>
+                 | <GotoStatement>
+                 | <IfStatement>
+                 | <OpenStatement>
+                 | <PrintStatement>
+                 | <ReturnStatement>
+                 | <SetStatement>
+                 | <TryCatchStatement>
+                 | <WaitforStatement>
+                 | <WhileStatement>
+
+! =============================================================================
+! Control-of-Flow and simple statements
+! =============================================================================
+
+<BreakStatement> ::= BREAK
+
+<ContinueStatement> ::= CONTINUE
+
+<GotoStatement> ::= GOTO <LabelName>
+
+! To avoid the hanging ELSE problem/ambiguity, we just require a block - even if this is more restrictive than T-SQL
+<IfStatement> ::= IF <Predicate> <StatementBlock> ELSE <StatementGroup>
+                | IF <Predicate> <StatementGroup>
+
+<ReturnStatement> ::= RETURN
+                    | RETURN <Expression>
+
+<TryCatchStatement> ::= BEGIN_TRY <StatementList> END_TRY BEGIN_CATCH <StatementList> END_CATCH
+
+<WhileStatement> ::= WHILE <Expression> <StatementGroup>
+
+<WaitforStatement> ::= WAITFOR Id <StringLiteral>
+                     | WAITFOR Id <VariableName>
+
+<PrintStatement> ::= PRINT <Expression>
+
+<AnyStatement> ::= Id <ExpressionList>
+
+! =============================================================================
+! DECLARE and Cursor statements
+! =============================================================================
+
+<DeclareStatement> ::= DECLARE <VariableName> <OptionalAs> TABLE <TableDefinitionGroup>
+                     | DECLARE <DeclareItemList>
+                     | DECLARE <CursorName> <CursorDefinition>
+
+<CursorDefinition> ::= CURSOR <CursorOptionList> FOR <SelectStatement>
+                     | CURSOR <CursorOptionList> FOR <SelectStatement> <CursorUpdate>
+
+<DeclareItem> ::= <VariableName> CURSOR
+                | <VariableName> <OptionalAs> <TypeNameQualified>
+                | <VariableName> <OptionalAs> <TypeNameQualified> '=' <Expression>
+
+<DeclareItemList> ::= <DeclareItem> ',' <DeclareItemList>
+                    | <DeclareItem>
+
+<CursorOptionList> ::= Id <CursorOptionList>
+                     |
+
+<CloseStatement> ::= CLOSE <GlobalOrLocalCursor>
+
+<OpenStatement> ::= OPEN <GlobalOrLocalCursor>
+
+<DeallocateStatement> ::= DEALLOCATE <GlobalOrLocalCursor>
+
+<GlobalOrLocalCursor> ::= <VariableName>
+                        | <CursorName>
+                        | Id <CursorName> ! Id should be GLOBAL, but GLOBAL isn't a reserved word
+
+<CursorUpdate> ::= FOR_UPDATE OF <ColumnNameList>
+                 | FOR_UPDATE
+                 | READ_ONLY
+
+! =============================================================================
+! Common helper constructs
+! =============================================================================
+
+<OptionalDefault> ::= '=' <Literal>
+                    |
+
+<DestinationRowset> ::= <VariableName>
+                      | <TableNameQualified>
+!                      | <Openrowset> -- not supported
+!                      | <Openquery> -- not supported
+
+<Openxml> ::= OPENXML '(' <VariableName> ',' <StringLiteral> ',' <IntegerLiteral> ')' <OptionalOpenxmlSchema>
+            | OPENXML '(' <VariableName> ',' <VariableName> ',' <IntegerLiteral> ')' <OptionalOpenxmlSchema>
+            | OPENXML '(' <VariableName> ',' <StringLiteral> ')' <OptionalOpenxmlSchema>
+            | OPENXML '(' <VariableName> ',' <VariableName> ')' <OptionalOpenxmlSchema>
+
+<OptionalOpenxmlSchema> ::= <OpenxmlImplicitSchema>
+                          | <OpenxmlExplicitSchema>
+                          |
+
+<OpenxmlImplicitSchema> ::= WITH '(' <TableNameQualified> ')'
+
+<OpenxmlExplicitSchema> ::= WITH '(' <OpenxmlColumnList> ')'
+
+<OpenxmlColumnList> ::= <OpenxmlColumn> ',' <OpenxmlColumnList>
+                      | <OpenxmlColumn>
+
+<OpenxmlColumn> ::= <ColumnName> <TypeName> <StringLiteral>
+                  | <ColumnName> <TypeName>
+
+! =============================================================================
+! SET (both variables and options, but not yet CLR UDT properties and fields)
+! =============================================================================
+
+<SetStatement> ::= <SetVariableStatement>
+                 | <SetOptionStatement>
+
+<SetVariableStatement> ::= SET <VariableName> '=' <Expression>
+                         | SET <VariableName> '=' <CursorDefinition>
+
+<SetOptionStatement> ::= SET Id <SetValueList>
+                       | SET IDENTITY_INSERT <TableName> <Toggle>
+
+<SetValueList> ::= <SetValue> <SetValueList>
+                 | <SetValue>
+
+<SetValue> ::= Id
+             | <Toggle>
+             | <IntegerLiteral>
+             | <StringValue>
+
+<StringValue> ::= <StringLiteral>
+                | <VariableName>
+
+! =============================================================================
+! CREATE/DROP FULLTEXT
+! =============================================================================
+
+! We don't allow to specify the catalog name, since the catalog is automatically assigned (module name)
+
+<CreateFulltextStatement> ::= CREATE FULLTEXT_INDEX ON TABLE <TableNameQualified> <FulltextColumnGroup> KEY INDEX <IndexName> <FulltextChangeTracking>
+
+<FulltextColumnGroup> ::= '(' <FulltextColumnList> ')'
+                        |
+
+<FulltextColumnList> ::= <FulltextColumn> ',' <FulltextColumnList>
+                       | <FulltextColumn>
+
+<FulltextColumn> ::= <ColumnName> <FulltextColumnType> <OptionalLanguage>
+
+<FulltextColumnType> ::= TYPE_COLUMN <TypeNameQualified>
+                       |
+
+<OptionalLanguage> ::= LANGUAGE_LCID
+                     |
+
+<FulltextChangeTracking> ::= WITH_CHANGE_TRACKING Id
+                           | WITH_CHANGE_TRACKING OFF
+                           | WITH_CHANGE_TRACKING OFF ',' NO_POPULATION
+                           |
+
+<DropFulltextStatement> ::= DROP FULLTEXT_INDEX ON <TableNameQualified>
+
+! =============================================================================
+! CREATE/DROP FUNCTION
+! =============================================================================
+
+! We don't allow to specify the schema name, it is implicit (module name)
+
+<CreateFunctionStatement> ::= CREATE FUNCTION <FunctionNameQualified> '(' <OptionalFunctionParameterList> _RETURNS <TypeNameQualified> <OptionalFunctionOption> <OptionalAs> <StatementBlock>
+                            | CREATE FUNCTION <FunctionNameQualified> '(' <OptionalFunctionParameterList> _RETURNS TABLE <OptionalFunctionOption> <OptionalAs> RETURN <FunctionInlineSelect>
+                            | CREATE FUNCTION <FunctionNameQualified> '(' <OptionalFunctionParameterList> _RETURNS <VariableName> TABLE <TableDefinitionGroup> <OptionalFunctionOption> <OptionalAs> <StatementBlock>
+
+<OptionalFunctionParameterList> ::= <FunctionParameterList>
+                                  |
+
+<FunctionParameterList> ::= <FunctionParameter> ',' <FunctionParameterList>
+                          | <FunctionParameter>
+
+<FunctionParameter> ::= <ParameterName> <OptionalAs> <TypeNameQualified> <OptionalDefault>
+
+<FunctionInlineSelect> ::= <SelectStatement>
+                         | '(' <FunctionInlineSelect> ')'
+
+! The options ENCRYPTION and SCHEMABINDING are handled by the module and therefore not allowed
+<OptionalFunctionOption> ::= WITH RETURNS_NULL_ON_NULL_INPUT
+                           | WITH CALLED_ON_NULL_INPUT
+                           |
+
+<DropFunctionStatement> ::= DROP FUNCTION <FunctionNameQualified>
+
+! =============================================================================
+! CREATE/DROP PROCEDURE and EXECUTE
+! =============================================================================
+
+<CreateProcedureStatement> ::= CREATE PROCEDURE <ProcedureNameQualified> <ProcedureParameterGroup> <ProcedureOptionGroup> <ProcedureFor> AS <StatementBlock>
+
+<ProcedureParameterGroup> ::= <ProcedureParameterList>
+                            |
+
+<ProcedureParameterList> ::= <ProcedureParameter> ',' <ProcedureParameterList>
+                           | <ProcedureParameter>
+
+<ProcedureParameter> ::= <ParameterName> <TypeNameQualified> <OptionalVarying> <OptionalDefault> <OptionalOutput> <OptionalReadonly>
+
+<OptionalVarying> ::= VARYING
+                    |
+
+<OptionalOutput> ::= OUTPUT
+                   |
+
+<OptionalReadonly> ::= Id
+                     |
+
+<ProcedureOptionGroup> ::= WITH_RECOMPILE
+                         |
+
+<ProcedureFor> ::= FOR_REPLICATION
+                 |
+
+<DropProcedureStatement> ::= DROP PROCEDURE <ProcedureNameQualified>
+
+<ExecuteStatement> ::= EXECUTE <VariableName> '=' <ProcedureNameQualified> <ExecuteParameterGroup> <ProcedureOptionGroup>
+                     | EXECUTE <ProcedureNameQualified> <ExecuteParameterGroup> <ProcedureOptionGroup>
+
+<ExecuteParameterGroup> ::= <ExecuteParameterList>
+                          |
+
+<ExecuteParameterList> ::= <ExecuteParameter> ',' <ExecuteParameterList>
+                         | <ExecuteParameter>
+
+<ExecuteParameter> ::= <TableNameQualified> ! for the system "sp_*" SPs
+                     | <ParameterName> '=' <VariableName> <OptionalOutput>
+                     | <ParameterName> '=' <SystemVariableName> <OptionalOutput>
+                     | <ParameterName> '=' <Literal> <OptionalOutput>
+                     | <VariableName> <OptionalOutput>
+                     | <SystemVariableName> <OptionalOutput>
+                     | <Literal> <OptionalOutput>
+
+! =============================================================================
+! CREATE/ALTER/DROP TABLE
+! =============================================================================
+
+! We don't support the ON option, filegroup is managed by module manager
+
+<CreateTableStatement> ::= CREATE TABLE <TableNameQualified> <TableDefinitionGroup>
+
+<AlterTableStatement> ::= ALTER TABLE <TableNameQualified> ALTER COLUMN <ColumnName> <ColumnDefinition>
+                        | ALTER TABLE <TableNameQualified> ALTER COLUMN <ColumnName> ADD ROWGUIDCOL
+                        | ALTER TABLE <TableNameQualified> ALTER COLUMN <ColumnName> DROP ROWGUIDCOL
+                        | ALTER TABLE <TableNameQualified> ALTER COLUMN <ColumnName> ADD_PERSISTED
+                        | ALTER TABLE <TableNameQualified> ALTER COLUMN <ColumnName> DROP_PERSISTED
+                        | ALTER TABLE <TableNameQualified> ALTER COLUMN <ColumnName> ADD NOT FOR_REPLICATION
+                        | ALTER TABLE <TableNameQualified> ALTER COLUMN <ColumnName> DROP NOT FOR_REPLICATION
+                        | ALTER TABLE <TableNameQualified> <TableCheck> ADD <TableDefinitionList>
+                        | ALTER TABLE <TableNameQualified> <TableCheck> NOCHECK CONSTRAINT <ConstraintName>
+                        | ALTER TABLE <TableNameQualified> <TableCheck> NOCHECK CONSTRAINT ALL
+                        | ALTER TABLE <TableNameQualified> <TableCheck> CHECK CONSTRAINT <ConstraintName>
+                        | ALTER TABLE <TableNameQualified> <TableCheck> CHECK CONSTRAINT ALL
+                        | ALTER TABLE <TableNameQualified> DROP <ConstraintName>
+                        | ALTER TABLE <TableNameQualified> DROP CONSTRAINT <ConstraintName>
+                        | ALTER TABLE <TableNameQualified> DROP COLUMN <ColumnName>
+
+<TableCheck> ::= WITH CHECK
+               | WITH NOCHECK
+               |
+
+<DropTableStatement> ::= DROP TABLE <TableNameQualified>
+
+! =============================================================================
+! CREATE/DROP VIEW
+! =============================================================================
+
+<CreateViewStatement> ::= CREATE VIEW <ViewNameQualified> <ColumnNameGroup> <ViewOptionalAttribute> AS <SelectStatement> <ViewOptionalCheckOption>
+
+<ColumnNameGroup> ::= '(' <ColumnNameList> ')'
+                    |
+
+<ViewOptionalAttribute> ::= WITH_VIEW_METADATA
+                          |
+
+<ViewOptionalCheckOption> ::= WITH_CHECK_OPTION
+                            |
+
+<DropViewStatement> ::= DROP VIEW <ViewNameQualified>
+
+! =============================================================================
+! CREATE/DROP INDEX
+! =============================================================================
+
+! We don't support the ON option, filegroup is managed by module manager
+
+<CreateIndexStatement> ::= CREATE <IndexOptionalUnique> <ConstraintCluster> INDEX <IndexName> ON <TableNameQualified> '(' <IndexColumnList> ')' INCLUDE_ <ColumnNameList> ')' <IndexOptionGroup>
+                         | CREATE <IndexOptionalUnique> <ConstraintCluster> INDEX <IndexName> ON <TableNameQualified> '(' <IndexColumnList> ')' <IndexOptionGroup>
+                         | CREATE <IndexPrimary> XML_INDEX <IndexName> ON <TableNameQualified> '(' <ColumnName> ')' <IndexUsing> <IndexOptionGroup>
+
+<IndexColumnList> ::= <IndexColumn> ',' <IndexColumnList>
+                    | <IndexColumn>
+
+<IndexOptionalUnique> ::= UNIQUE
+                        |
+
+<IndexColumn> ::= <ColumnName> <OrderType> 
+
+<IndexPrimary> ::= PRIMARY
+                 |
+
+<IndexOptionGroup> ::= WITH '(' <IndexOptionList> ')'
+                     |
+
+<IndexOptionList> ::= <IndexOption> ',' <IndexOptionList>
+                    | <IndexOption>
+
+<IndexOption> ::= Id '=' <IntegerLiteral>
+                | Id '=' <Toggle>
+
+<IndexUsing> ::= USING_XML_INDEX <IndexName> FOR_VALUE
+               | USING_XML_INDEX <IndexName> FOR_PATH
+               | USING_XML_INDEX <IndexName> FOR_PROPERTY
+               |
+
+<DropIndexStatement> ::= DROP INDEX <IndexName> ON <TableNameQualified> <IndexOptionGroup>
+
+! =============================================================================
+! CREATE/DROP TRIGGER
+! =============================================================================
+
+! Only DML triggers are supported
+
+<CreateTriggerStatement> ::= CREATE TRIGGER <TriggerNameQualified> ON <TableNameQualified> <TriggerType> <TriggerOperationList> <OptionalNotForReplication> AS <StatementGroup>
+
+<TriggerType> ::= FOR
+                | INSTEAD_OF
+                | Id ! AFTER is not a keyword
+
+<TriggerOperationList> ::= <TriggerOperation> ',' <TriggerOperationList>
+                         | <TriggerOperation>
+
+<TriggerOperation> ::= INSERT
+                     | UPDATE
+                     | DELETE
+
+<OptionalNotForReplication> ::= NOT FOR_REPLICATION
+                              |
+
+<TriggerTarget> ::= <TableNameQualified>
+                  | DATABASE
+                  | ALL_SERVER
+
+<EnableTriggerStatement> ::= ENABLE_TRIGGER ALL ON <TriggerTarget>
+                           | ENABLE_TRIGGER <TriggerNameQualifiedList> ON <TriggerTarget>
+
+<DisableTriggerStatement> ::= DISABLE_TRIGGER ALL ON <TriggerTarget>
+                            | DISABLE_TRIGGER <TriggerNameQualifiedList> ON <TriggerTarget>
+
+<TriggerNameQualifiedList> ::= <TriggerNameQualified> ',' <TriggerNameQualifiedList>
+                             | <TriggerNameQualified>
+
+<DropTriggerStatement> ::= DROP TRIGGER <TriggerNameQualified>
+
+! =============================================================================
+! CREATE/DROP XML SCHEMA COLLECTION
+! =============================================================================
+
+<CreateXmlSchemaCollectionStatement> ::= CREATE XML_SCHEMA_COLLECTION <XmlSchemaCollectionNameQualified> AS <Expression>
+
+<DropXmlSchemaCollectionStatement> ::= DROP XML_SCHEMA_COLLECTION <XmlSchemaCollectionNameQualified>
+
+! =============================================================================
+! Table/Column Type Definitions
+! =============================================================================
+
+<TableDefinitionGroup> ::= '(' <TableDefinitionList> ')'
+
+<TableDefinitionList> ::= <TableDefinition> ',' <TableDefinitionList>
+                        | <TableDefinition>
+
+<TableDefinition> ::= <ColumnName> <ColumnDefinition>
+                    | <TableConstraint>
+
+<TableConstraint> ::= CONSTRAINT <ConstraintName> PRIMARY KEY <ConstraintCluster> '(' <IndexColumnList> ')' <ConstraintIndex>
+                    | CONSTRAINT <ConstraintName> UNIQUE <ConstraintCluster> '(' <IndexColumnList> ')' <ConstraintIndex>
+                    | CONSTRAINT <ConstraintName> FOREIGN KEY '(' <ColumnNameList> ')' REFERENCES <TableNameQualified> <ColumnNameGroup> <ForeignKeyActionList>
+                    | CONSTRAINT <ConstraintName> CHECK <OptionalNotForReplication> '(' <Expression> ')'
+                    | PRIMARY KEY <ConstraintCluster> '(' <IndexColumnList> ')' <ConstraintIndex>
+                    | UNIQUE <ConstraintCluster> '(' <IndexColumnList> ')' <ConstraintIndex>
+                    | FOREIGN KEY '(' <ColumnNameList> ')' REFERENCES <TableNameQualified> <ColumnNameGroup> <ForeignKeyActionList>
+                    | CHECK <OptionalNotForReplication> '(' <Expression> ')'
+
+<ForeignKeyActionList> ::= <ForeignKeyAction> <ForeignKeyActionList>
+                         |
+
+<ForeignKeyAction> ::= ON DELETE NO_ACTION
+                     | ON DELETE CASCADE
+                     | ON DELETE SET NULL
+                     | ON DELETE SET DEFAULT
+                     | ON UPDATE NO_ACTION
+                     | ON UPDATE CASCADE
+                     | ON UPDATE SET NULL
+                     | ON UPDATE SET DEFAULT
+
+<OptionalForeignRefColumn> ::= '(' <ColumnName> ')'
+                             |
+
+<ColumnDefinition> ::= <TypeNameQualified> <ColumnConstraintList>
+                     | AS <Expression>
+
+<ColumnConstraintList> ::= <ColumnConstraint> <ColumnConstraintList>
+                         | 
+
+<ColumnConstraint> ::= <NamedColumnConstraint>
+                     | COLLATE <CollationName>
+                     | IDENTITY 
+                     | IDENTITY '(' IntegerLiteral ',' IntegerLiteral ')'
+                     | ROWGUIDCOL
+                     | NOT NULL
+                     | NULL
+
+<NamedColumnConstraint> ::= CONSTRAINT <ConstraintName> PRIMARY KEY <ConstraintCluster> <ConstraintIndex>
+                          | CONSTRAINT <ConstraintName> UNIQUE <ConstraintCluster> <ConstraintIndex>
+                          | CONSTRAINT <ConstraintName> FOREIGN KEY REFERENCES <TableNameQualified> <OptionalForeignRefColumn> <ForeignKeyActionList>
+                          | CONSTRAINT <ConstraintName> REFERENCES <TableNameQualified> <OptionalForeignRefColumn> <ForeignKeyActionList>
+                          | CONSTRAINT <ConstraintName> CHECK <OptionalNotForReplication> '(' <Expression> ')'
+                          | CONSTRAINT <ConstraintName> DEFAULT <ConstraintDefaultValue>
+                          | PRIMARY KEY <ConstraintCluster> <ConstraintIndex>
+                          | UNIQUE <ConstraintCluster> <ConstraintIndex>
+                          | FOREIGN KEY REFERENCES <TableNameQualified> <OptionalForeignRefColumn> <ForeignKeyActionList>
+                          | REFERENCES <TableNameQualified> <OptionalForeignRefColumn> <ForeignKeyActionList>
+                          | CHECK <OptionalNotForReplication> '(' <Expression> ')'
+                          | DEFAULT <ConstraintDefaultValue>
+
+<ConstraintCluster> ::= CLUSTERED
+                      | NONCLUSTERED
+                      |
+
+<ConstraintDefaultValue> ::= '(' <ConstraintDefaultValue> ')'
+                           | <FunctionCall>
+                           | <NumberLiteral>
+                           | <StringLiteral>
+                           | <NullLiteral>
+
+<ConstraintIndex> ::= WITH_FILLFACTOR '=' <IntegerLiteral>
+                    | <IndexOptionGroup>
+
+! =============================================================================
+! Common Table Expressions, TOP and OUTPUT clauses
+! =============================================================================
+
+<CTEGroup> ::= WITH <CTEList>
+             |
+
+<CTEList> ::= <CTE> ',' <CTEList>
+            | <CTE>
+
+<CTE> ::= <AliasName> <ColumnNameGroup> AS '(' <SelectQuery> ')'
+
+<Top> ::= TOP '(' <Expression> ')' <OptionalPercent> <OptionalWithTies>
+
+<OptionalTop> ::= <Top>
+                |
+
+<OptionalPercent> ::= PERCENT
+                    |
+
+<OptionalWithTies> ::= WITH_TIES
+                     |
+
+<OutputClause> ::= OUTPUT <ColumnItemList>
+                 | OUTPUT <ColumnItemList> INTO <DestinationRowset> <ColumnNameGroup>
+                 |
+
+<QueryHint> ::= OPTION_MAXRECURSION IntegerLiteral ')'
+              |
+
+! =============================================================================
+! INSERT Statement
+! =============================================================================
+
+<InsertStatement> ::= <CTEGroup> INSERT <OptionalTop> <OptionalInto> <DestinationRowset> <ColumnNameGroup> <OutputClause> VALUES '(' <ExpressionList> ')' <QueryHint>
+                    | <CTEGroup> INSERT <OptionalTop> <OptionalInto> <DestinationRowset> <ColumnNameGroup> <OutputClause> <SelectQuery> <QueryHint>
+                    | <CTEGroup> INSERT <OptionalTop> <OptionalInto> <DestinationRowset> <ColumnNameGroup> <OutputClause> <ExecuteStatement> <QueryHint>
+                    | <CTEGroup> INSERT <OptionalTop> <OptionalInto> <DestinationRowset> DEFAULT VALUES <QueryHint>
+
+<OptionalInto> ::= INTO
+                 |
+
+! =============================================================================
+! UPDATE Statement
+! =============================================================================
+
+<UpdateStatement> ::= <CTEGroup> UPDATE <OptionalTop> <DestinationRowset> SET <UpdateItemList> <OutputClause> <OptionalFromClause> <WhereClause> <QueryHint>
+
+<UpdateItemList> ::= <UpdateItem> ',' <UpdateItemList>
+                   | <UpdateItem>
+
+<UpdateItem> ::= <ColumnNameQualified> '=' <Expression>
+!               | <ColumnNameQualified> '=' <ColumnNameQualified> .WRITE -- syntax not yet implemented
+               | <ColumnNameQualified> '=' DEFAULT
+               | <VariableName> '=' <Expression>
+               | <VariableName> '=' <ColumnNameQualified> '=' <Expression>
+
+<OptionalFromClause> ::= <FromClause>
+                       |
+
+! =============================================================================
+! DELETE Statement
+! =============================================================================
+
+<DeleteStatement> ::= <CTEGroup> DELETE <OptionalTop> <OptionalFrom> <DestinationRowset> <OutputClause> <OptionalFromClause> <WhereClause> <QueryHint>
+
+<OptionalFrom> ::= FROM
+                 |
+
+! =============================================================================
+! SELECT Statement
+! =============================================================================
+
+<SelectStatement> ::= WITH <CTEList> <SelectQuery> <ForClause> <QueryHint>
+                    | <SelectQuery> <ForClause> <QueryHint>
+
+<SelectQuery> ::= SELECT <Restriction> <TopLegacy> <ColumnItemList> <IntoClause> <FromClause> <WhereClause> <GroupClause> <HavingClause> <OptionalOrderClause> <UnionClause>
+                | SELECT <Restriction> <ColumnItemList> <IntoClause> <FromClause> <WhereClause> <GroupClause> <HavingClause> <OptionalOrderClause> <UnionClause>
+                | SELECT <TopLegacy> <ColumnItemList> <IntoClause> <FromClause> <WhereClause> <GroupClause> <HavingClause> <OptionalOrderClause> <UnionClause>
+                | SELECT <ColumnItemList> <IntoClause> <FromClause> <WhereClause> <GroupClause> <HavingClause> <OptionalOrderClause> <UnionClause>
+                | SELECT <Restriction> <TopLegacy> <ColumnItemList> <IntoClause> <UnionClause>
+                | SELECT <Restriction> <ColumnItemList> <IntoClause> <UnionClause>
+                | SELECT <TopLegacy> <ColumnItemList> <IntoClause> <UnionClause>
+                | SELECT <ColumnItemList> <IntoClause> <UnionClause>
+
+<TopLegacy> ::= TOP IntegerLiteral <OptionalPercent>
+              | <Top>
+
+<ColumnItemList> ::= <ColumnItem> ',' <ColumnItemList>
+                   | <ColumnItem>
+
+<ColumnItem> ::= <ColumnWildQualified>
+               | <Expression> <OptionalAlias>
+               | <AliasName> '=' <Expression>
+               | <VariableName> '=' <Expression>
+
+<Restriction> ::= ALL
+                | DISTINCT
+
+<IntoClause> ::= INTO <DestinationRowset>
+               |
+
+<FromClause> ::= FROM <Source> <JoinChain>
+
+<Source> ::= <SourceRowset> 
+           | '(' <Source> <JoinChain> ')'
+
+<JoinChain> ::= <Join> <JoinChain>
+              |
+
+<Join> ::= JOIN <Source> ON <Predicate>
+         | INNER JOIN <Source> ON <Predicate>
+         | LEFT JOIN <Source> ON <Predicate>
+         | LEFT OUTER JOIN <Source> ON <Predicate>
+         | RIGHT JOIN <Source> ON <Predicate>
+         | RIGHT OUTER JOIN <Source> ON <Predicate>
+         | FULL JOIN <Source> ON <Predicate>
+         | FULL OUTER JOIN <Source> ON <Predicate>
+         | CROSS JOIN <Source>
+
+<SourceRowset> ::= <VariableName> <OptionalAlias>
+                 | <TableNameQualified> <OptionalAlias>
+                 | <Openxml> <OptionalAlias>
+                 | <FunctionCall> <OptionalAlias>
+                 | <SchemaName> '.' <FunctionCall> <OptionalAlias>
+                 | '(' <SelectQuery> ')' <OptionalAlias>
+
+<OptionalAlias> ::= <OptionalAs> <AliasName>
+                  |
+
+<WhereClause> ::= WHERE <Predicate>
+                |
+
+<GroupClause> ::= GROUP BY <ExpressionList>
+                |
+
+<OrderClause> ::= ORDER BY <OrderList>
+
+<OptionalOrderClause> ::= <OrderClause>
+                        |
+
+<OrderList> ::= <Order> ',' <OrderList>
+              | <Order>
+
+<Order> ::= <Expression> <OrderType>
+
+<OrderType> ::= ASC
+              | DESC
+              |
+
+<HavingClause> ::= HAVING <Predicate>
+                 |
+
+<UnionClause> ::= UNION <SelectQuery>
+                | UNION ALL <SelectQuery>
+                |
+
+<ForClause> ::= FOR BROWSE
+              | FOR_XML_AUTO
+              | FOR_XML_AUTO <XmlDirectiveList>
+              | FOR_XML_RAW <OptionalElementName>
+              | FOR_XML_RAW <OptionalElementName> <XmlDirectiveList>
+              | FOR_XML_EXPLICIT
+              | FOR_XML_EXPLICIT <XmlDirectiveList>
+              | FOR_XML_PATH <OptionalElementName>
+              | FOR_XML_PATH <OptionalElementName> <XmlDirectiveList>
+              |
+
+<OptionalElementName> ::= '(' StringLiteral ')'
+                        |
+
+<XmlDirectiveList> ::= <XmlDirective> ',' <XmlDirectiveList>
+                     | <XmlDirective>
+
+<XmlDirective> ::= Id <OptionalElementName>
+                 | Id Id
+
+! ============================================================================= 
+! Pedicates and Expressions
+! =============================================================================
+
+<Predicate> ::= <PredicateOr>
+
+<PredicateOr> ::= <PredicateAnd> OR <PredicateOr>
+                | <PredicateAnd>
+
+<PredicateAnd> ::= <PredicateNot> AND <PredicateAnd>
+                 | <PredicateNot>
+
+<PredicateNot> ::= NOT <PredicateBetween>
+                 | <PredicateBetween>
+
+<PredicateBetween> ::= <Expression> BETWEEN <Expression> AND <Expression>
+                     | <Expression> NOT BETWEEN <Expression> AND <Expression>
+                     | <PredicateNull>
+
+<PredicateNull> ::= <Expression> IS NULL
+                  | <Expression> IS NOT NULL
+                  | <PredicateLike>
+
+<PredicateLike> ::= <Expression> LIKE <CollableStringLiteral>
+                  | <Expression> LIKE <CollableStringLiteral> ESCAPE StringLiteral
+                  | <Expression> NOT LIKE <CollableStringLiteral>
+                  | <Expression> NOT LIKE <CollableStringLiteral> ESCAPE StringLiteral
+                  | <PredicateIn>
+
+<PredicateIn> ::= <Expression> IN <Tuple>
+                | <Expression> NOT IN <Tuple>
+                | <PredicateExists>
+
+! support for SOME/ANY/ALL comparisons on sets is missing: http://msdn.microsoft.com/en-US/library/ms175064(v=SQL.90).aspx
+
+<Tuple> ::= '(' <SelectQuery> ')'
+          | '(' <ExpressionList> ')'
+
+<ExpressionList> ::= <Expression> ',' <ExpressionList>
+                   | <Expression>
+
+<PredicateExists> ::= EXISTS '(' <SelectQuery> ')'
+                    | <PredicateCompare>
+
+<PredicateCompare> ::= <Expression> '=' <Expression>
+                     | <Expression> '<>' <Expression>
+                     | <Expression> '>' <Expression>
+                     | <Expression> '>=' <Expression>
+                     | <Expression> '<' <Expression>
+                     | <Expression> '<=' <Expression>
+                     | <PredicateParens>
+
+<PredicateParens> ::= '(' <Predicate> ')'
+
+<Expression> ::= <ExpressionAdd>
+
+<ExpressionAdd> ::= <ExpressionMult> '+' <ExpressionAdd>
+                  | <ExpressionMult> '-' <ExpressionAdd>
+                  | <ExpressionMult>
+
+<ExpressionMult> ::= <ExpressionMult> '*' <ExpressionNegate> 
+                   | <ExpressionMult> '/' <ExpressionNegate> 
+                   | <ExpressionMult> '%' <ExpressionNegate> 
+                   | <ExpressionNegate>
+
+<ExpressionNegate> ::= '-' <ExpressionCase>
+                     | '+' <ExpressionCase> ! the "unary plus" also belongs somewhere here
+                     | <ExpressionCase>
+
+<RankingArguments> ::= PARTITION_BY <ExpressionList> <OptionalOrderClause>
+                     | <OrderClause>
+
+<ExpressionCase> ::= CASE <Expression> <CaseWhenExpressionList> ELSE <Expression> END
+                   | CASE <Expression> <CaseWhenExpressionList> END
+                   | CASE <CaseWhenPredicateList> ELSE <Expression> END
+                   | CASE <CaseWhenPredicateList> END
+                   | <ExpressionCountFunction>
+
+<CaseWhenExpressionList> ::= <CaseWhenExpression> <CaseWhenExpressionList>
+                           | <CaseWhenExpression>
+                           
+<CaseWhenExpression> ::= WHEN <Expression> THEN <Expression>
+
+<CaseWhenPredicateList> ::= <CaseWhenPredicate> <CaseWhenPredicateList>
+                           | <CaseWhenPredicate>
+                           
+<CaseWhenPredicate> ::= WHEN <Predicate> THEN <Expression>
+
+<ExpressionCountFunction> ::= COUNT_ <ColumnWildNameQualified> ')'
+                            | COUNT_ <Restriction> <ColumnWildNameQualified> ')'
+                            | <CollatedValue>
+             
+<CollatedValue> ::= <Value> COLLATE <CollationName>
+                  | <Value>
+                  | <Literal>
+     
+<FunctionCall> ::= <FunctionName> '(' ')'
+                 | <FunctionName> '(' <ExpressionList> ')'
+
+<Value> ::= <SystemVariableName>
+          | <ColumnNameQualified>
+          | <VariableName> ! CLR UDT property, field and methods are not yet implemented
+          | CAST_ <Expression> AS <TypeName> ')'
+          | COALESCE '(' <ExpressionList> ')'
+          | NULLIF '(' <Expression> ',' <Expression> ')'
+          | CONVERT '(' <TypeName> ',' <Expression> ')'
+          | CONVERT '(' <TypeName> ',' <Expression> ',' IntegerLiteral ')'
+          | <FunctionCall>
+          | <TableName> '.' <FunctionCall> ! should be <SchemaName> '.' <FunctionCall> - but that gives a reduce-reduce error
+          | <FunctionCall> OVER '(' <RankingArguments> ')'
+          | <ExpressionParens>
+
+<ExpressionParens> ::= '(' <SelectQuery> ')'
+                     | '(' <Expression> ')'
