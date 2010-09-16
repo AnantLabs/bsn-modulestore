@@ -1,0 +1,3 @@
+﻿Insert build artifacts here:
+- bsn.GoldParser
+- bsn.CommandLine
