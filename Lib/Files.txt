@@ -1,6 +1,3 @@
-﻿SMO 10 is required to run ModuleStore; the ones included here are for compilation only:
-http://www.microsoft.com/downloads/en/details.aspx?FamilyId=228DE03F-3B5A-428A-923F-58A033D316E1&displaylang=en#SMO
-
-Insert build artifacts here:
+﻿Insert build artifacts here:
 - bsn.GoldParser
 - bsn.CommandLine
