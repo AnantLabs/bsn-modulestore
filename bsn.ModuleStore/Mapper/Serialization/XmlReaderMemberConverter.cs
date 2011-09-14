@@ -44,7 +44,7 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 			}
 		}
 
-		public override sealed object ProcessFromDb(SqlDeserializer.DeserializerContext context, int column) {
+		public override sealed object ProcessFromDb(IDeserializerContext context, int column) {
 			SqlXml xml = context.DataReader.GetSqlXml(column);
 			if (!xml.IsNull) {
 				return ProcessXmlReader(context, xml.CreateReader());
@@ -63,7 +63,7 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 			return (XmlReader)value;
 		}
 
-		protected virtual object ProcessXmlReader(SqlDeserializer.DeserializerContext context, XmlReader xmlReader) {
+		protected virtual object ProcessXmlReader(IDeserializerContext context, XmlReader xmlReader) {
 			return xmlReader;
 		}
 	}

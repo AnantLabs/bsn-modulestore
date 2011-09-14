@@ -1,7 +1,7 @@
-﻿// bsn ModuleStore database versioning
+// bsn ModuleStore database versioning
 // -----------------------------------
 // 
-// Copyright 2010 by Arsène von Wyss - avw@gmx.ch
+// Copyright 2010 by Ars�ne von Wyss - avw@gmx.ch
 // 
 // Development has been supported by Sirius Technologies AG, Basel
 // 
@@ -28,22 +28,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Runtime.Remoting.Messaging;
+using System.Data.SqlClient;
+using System.Xml;
 
-using bsn.ModuleStore.Sql.Script;
-
-namespace bsn.ModuleStore.Mapper {
-	internal class SqlCallParameterConstant: SqlCallParameterBase {
-		private readonly object value;
-
-		public SqlCallParameterConstant(ProcedureParameter parameter, object value): base(parameter, ParameterDirection.Input, value == null, false) {
-			this.value = value;
+namespace bsn.ModuleStore.Mapper.Serialization {
+	public interface IDeserializerContext {
+		SqlDataReader DataReader {
+			get;
 		}
 
-		protected override object SetParameterValue(IMethodCallMessage mcm, IList<IDisposable> disposables) {
-			return value;
+		XmlNameTable NameTable {
+			get;
 		}
+
+		XmlDocument XmlDocument {
+			get;
+		}
+
+		object GetInstance(Type instanceType, object identity, out InstanceOrigin instanceOrigin);
+
+		void RequireDeserialization(object obj);
+
+		bool IsDeserialized(object obj);
 	}
 }

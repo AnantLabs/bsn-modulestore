@@ -1,7 +1,7 @@
-﻿// bsn ModuleStore database versioning
+// bsn ModuleStore database versioning
 // -----------------------------------
 // 
-// Copyright 2010 by Arsène von Wyss - avw@gmx.ch
+// Copyright 2010 by Ars�ne von Wyss - avw@gmx.ch
 // 
 // Development has been supported by Sirius Technologies AG, Basel
 // 
@@ -27,12 +27,40 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
-using System;
 
-namespace bsn.ModuleStore.Mapper {
-	/// <summary>
-	/// The SqlNameTableAttribute attribute is used to specify the XML nametable to use for XML-based return values.
-	/// </summary>
-	[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
-	public sealed class SqlNameTableAttribute: Attribute {}
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Data;
+
+namespace bsn.ModuleStore.Mapper.Serialization {
+	public interface ISerializationTypeMapping {
+		IDictionary<string, SqlColumnInfo> Columns {
+			get;
+		}
+
+		ReadOnlyCollection<IMemberConverter> Converters {
+			get;
+		}
+
+		bool HasNestedSerializers {
+			get;
+		}
+
+		int MemberCount {
+			get;
+		}
+
+		bool IsNativeType {
+			get;
+		}
+
+		SqlDbType DbType {
+			get;
+		}
+
+		object GetMember(object instance, int index);
+
+		void PopulateInstanceMembers(object result, object[] buffer);
+	}
 }

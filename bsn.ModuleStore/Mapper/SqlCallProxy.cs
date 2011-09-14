@@ -40,6 +40,7 @@ using System.Runtime.Remoting.Proxies;
 using System.Xml;
 using System.Xml.XPath;
 
+using bsn.ModuleStore.Mapper.AssemblyMetadata;
 using bsn.ModuleStore.Mapper.Serialization;
 
 namespace bsn.ModuleStore.Mapper {
@@ -99,14 +100,15 @@ namespace bsn.ModuleStore.Mapper {
 		private static readonly MethodInfo getHashCode = typeof(object).GetMethod("GetHashCode", BindingFlags.Public|BindingFlags.Instance);
 		private static readonly MethodInfo getInstanceName = typeof(IStoredProcedures).GetProperty("InstanceName", BindingFlags.Public|BindingFlags.Instance).GetGetMethod();
 		private static readonly MethodInfo getProvider = typeof(IStoredProcedures).GetProperty("Provider", BindingFlags.Public|BindingFlags.Instance).GetGetMethod();
-		private static readonly MethodInfo getType = typeof(object).GetMethod("GetType", BindingFlags.Public|BindingFlags.Instance);
+		private static readonly MethodInfo getType = typeof(object).GetMethod("GetType", BindingFlags.Public | BindingFlags.Instance);
 		private static readonly MethodInfo setProvider = typeof(IStoredProcedures).GetProperty("Provider", BindingFlags.Public|BindingFlags.Instance).GetSetMethod();
-		private static readonly MethodInfo toString = typeof(object).GetMethod("ToString", BindingFlags.Public|BindingFlags.Instance);
+		private static readonly MethodInfo toString = typeof(object).GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance);
 
 		/// <summary>
 		/// Create a new proxy to be used for stored procedure calls, which can be called through the interface specified by <typeparamref name="I"/>.
 		/// </summary>
 		/// <typeparam name="I">The interface declaring the calls. This interface must implement <see cref="IDisposable"/></typeparam>
+		/// <param name="metadataProvider">The metadata provider.</param>
 		/// <param name="connectionProvider">The connection provider.</param>
 		/// <returns>
 		/// An instance of the type requested by <typeparamref name="I"/>.
@@ -115,7 +117,6 @@ namespace bsn.ModuleStore.Mapper {
 		public static I Create<I>(IMetadataProvider metadataProvider, IConnectionProvider connectionProvider) where I: IStoredProcedures {
 			return (I)(new SqlCallProxy(metadataProvider, connectionProvider, typeof(I))).GetTransparentProxy();
 		}
-
 		// ReSharper restore InconsistentNaming
 
 		private static object[] GetOutArgValues(SqlParameter[] dbParams) {
@@ -137,12 +138,20 @@ namespace bsn.ModuleStore.Mapper {
 		private readonly IConnectionProvider connectionProvider;
 		private readonly Dictionary<MethodBase, Func<IMethodCallMessage, IMessage>> methods = new Dictionary<MethodBase, Func<IMethodCallMessage, IMessage>>(8);
 		private IInstanceProvider provider;
+		private readonly ISerializationTypeInfoProvider serializationTypeInfoProvider;
 
 		private SqlCallProxy(IMetadataProvider metadataProvider, IConnectionProvider connectionProvider, Type interfaceToProxy): base(interfaceToProxy) {
+			if (metadataProvider == null) {
+				throw new ArgumentNullException("metadataProvider");
+			}
 			if (connectionProvider == null) {
 				throw new ArgumentNullException("connectionProvider");
 			}
 			this.connectionProvider = connectionProvider;
+			serializationTypeInfoProvider = metadataProvider.SerializationTypeInfoProvider;
+			if (serializationTypeInfoProvider == null) {
+				throw new ArgumentException("The metadata provider does not provide a serializationTypeInfoProvider. Please check the implementation.", "metadataProvider");
+			}
 			callInfo = metadataProvider.GetCallInfo(interfaceToProxy);
 			methods.Add(equals, ProxyEquals);
 			methods.Add(getAssembly, ProxyGetAssembly);
@@ -190,7 +199,7 @@ namespace bsn.ModuleStore.Mapper {
 					}
 					SqlParameter returnParameter;
 					SqlParameter[] outParameters;
-					SqlSerializationTypeInfo returnTypeInfo;
+					ISerializationTypeInfo returnTypeInfo;
 					ICallDeserializationInfo procInfo;
 					IList<IDisposable> disposeList = new List<IDisposable>(0);
 					XmlNameTable xmlNameTable;
@@ -232,7 +241,7 @@ namespace bsn.ModuleStore.Mapper {
 								} else if (typeof(ResultSet).IsAssignableFrom(returnType)) {
 									reader = command.ExecuteReader(CommandBehavior.Default);
 									profiler.Fetch();
-									using (SqlDeserializationContext context = new SqlDeserializationContext(provider)) {
+									using (SqlDeserializationContext context = new SqlDeserializationContext(provider, serializationTypeInfoProvider)) {
 										returnValue = Activator.CreateInstance(returnType);
 										((ResultSet)returnValue).Load(context, reader);
 										if (reader.NextResult()) {
@@ -257,7 +266,7 @@ namespace bsn.ModuleStore.Mapper {
 										connection = null;
 										if (isTypedDataReader) {
 											try {
-												returnValue = new DataReaderProxy(reader, returnType).GetTransparentProxy();
+												returnValue = new DataReaderProxy(reader, returnType, serializationTypeInfoProvider.TypeMappingProvider).GetTransparentProxy();
 											} catch {
 												reader.Dispose();
 												throw;
@@ -279,7 +288,7 @@ namespace bsn.ModuleStore.Mapper {
 												throw new InvalidOperationException("The stored procedure did not return any result, but a result was required for object deserialization");
 											}
 										} else {
-											using (SqlDeserializationContext context = new SqlDeserializationContext(provider)) {
+											using (SqlDeserializationContext context = new SqlDeserializationContext(provider, serializationTypeInfoProvider)) {
 												if (returnTypeInfo.SimpleConverter != null) {
 													SqlDeserializer.DeserializerContext deserializerContext = new SqlDeserializer.DeserializerContext(context, reader, procInfo.DeserializeCallConstructor, xmlNameTable);
 													if (returnTypeInfo.IsCollection) {
