@@ -39,6 +39,8 @@ using System.Text;
 
 using bsn.ModuleStore.Bootstrapper;
 using bsn.ModuleStore.Mapper;
+using bsn.ModuleStore.Mapper.AssemblyMetadata;
+using bsn.ModuleStore.Mapper.Serialization;
 using bsn.ModuleStore.Sql;
 using bsn.ModuleStore.Sql.Script;
 
@@ -277,10 +279,17 @@ namespace bsn.ModuleStore {
 			lock (knownTypes) {
 				SqlCallInfo result;
 				if (!knownTypes.TryGetValue(interfaceType, out result)) {
-					result = new SqlCallInfo(GetModuleInstanceCache(interfaceType.Assembly).AssemblyInfo.Inventory, interfaceType);
+					ISerializationTypeInfoProvider serializationTypeInfoProvider = ((IMetadataProvider)this).SerializationTypeInfoProvider;
+					result = new SqlCallInfo(GetModuleInstanceCache(interfaceType.Assembly).AssemblyInfo.Inventory, serializationTypeInfoProvider, interfaceType, serializationTypeInfoProvider.TypeMappingProvider);
 					knownTypes.Add(interfaceType, result);
 				}
 				return result;
+			}
+		}
+
+		ISerializationTypeInfoProvider IMetadataProvider.SerializationTypeInfoProvider {
+			get {
+				return new SerializationTypeInfoProvider();
 			}
 		}
 	}

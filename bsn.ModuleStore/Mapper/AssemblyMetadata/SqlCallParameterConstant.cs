@@ -27,29 +27,24 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
-using System;
 
-namespace bsn.ModuleStore.Mapper {
-	[AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
-	public sealed class SqlParameterAttribute: Attribute {
-		private readonly string parameterName;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Runtime.Remoting.Messaging;
+
+using bsn.ModuleStore.Sql.Script;
+
+namespace bsn.ModuleStore.Mapper.AssemblyMetadata {
+	internal class SqlCallParameterConstant: SqlCallParameterBase {
 		private readonly object value;
 
-		public SqlParameterAttribute(string parameterName, object value) {
-			this.parameterName = parameterName;
+		public SqlCallParameterConstant(ProcedureParameter parameter, object value): base(parameter, ParameterDirection.Input, value == null, false) {
 			this.value = value;
 		}
 
-		public string ParameterName {
-			get {
-				return parameterName;
-			}
-		}
-
-		public object Value {
-			get {
-				return value;
-			}
+		protected override object SetParameterValue(IMethodCallMessage mcm, IList<IDisposable> disposables) {
+			return value;
 		}
 	}
 }

@@ -27,9 +27,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+
+using bsn.ModuleStore.Mapper.Serialization;
 
 namespace bsn.ModuleStore.Mapper {
 	internal class TypedDataReaderInfo {
@@ -61,7 +64,7 @@ namespace bsn.ModuleStore.Mapper {
 				if ((!property.CanRead) || (property.CanWrite)) {
 					throw new NotSupportedException("Properties for the typed data reader must be read-only.");
 				}
-				properties.Add(property.GetGetMethod().Name, new KeyValuePair<string, Type>(SqlColumnAttribute.GetColumnAttribute(property, true).Name, property.PropertyType));
+				properties.Add(property.GetGetMethod().Name, new KeyValuePair<string, Type>(SqlColumnAttribute.GetSqlColumnAttribute(property, true).Name, property.PropertyType));
 			}
 		}
 

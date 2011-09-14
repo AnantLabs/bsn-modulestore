@@ -113,8 +113,9 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 	/// The DbDeserializer class is the base class for the generic <see cref="SqlDeserializer{T}"/> class. Please use the generic version, this class is for internal use only by <see cref="SqlCallProxy"/>.
 	/// </summary>
 	/// <seealso cref="SqlDeserializer{T}"/>
-	public class SqlDeserializer: IDisposable {
-		protected internal class DeserializerContext {
+	internal class SqlDeserializer: IDisposable {
+		internal class DeserializerContext : IDeserializerContext
+		{
 			private readonly IDictionary<SqlDeserializer, object[]> buffers = new Dictionary<SqlDeserializer, object[]>();
 			private readonly bool callConstructor;
 			private readonly SqlDeserializationContext context;
@@ -122,21 +123,26 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 			private XmlNameTable nameTable;
 			private XmlDocument xmlDocument;
 
-			public DeserializerContext(SqlDeserializationContext context, SqlDataReader dataReader, bool callConstructor, XmlNameTable nameTable) {
+			internal DeserializerContext(SqlDeserializationContext context, SqlDataReader dataReader, bool callConstructor, XmlNameTable nameTable)
+			{
 				this.dataReader = dataReader;
 				this.context = context;
 				this.callConstructor = callConstructor;
 				this.nameTable = nameTable;
 			}
 
-			public SqlDataReader DataReader {
-				get {
+			public SqlDataReader DataReader
+			{
+				get
+				{
 					return dataReader;
 				}
 			}
 
-			public XmlNameTable NameTable {
-				get {
+			public XmlNameTable NameTable
+			{
+				get
+				{
 					if (nameTable == null) {
 						nameTable = new NameTable();
 					}
@@ -144,8 +150,10 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 				}
 			}
 
-			public XmlDocument XmlDocument {
-				get {
+			public XmlDocument XmlDocument
+			{
+				get
+				{
 					if (xmlDocument == null) {
 						xmlDocument = new XmlDocument(NameTable);
 					}
@@ -166,11 +174,16 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 				return context.IsDeserialized(obj);
 			}
 
-			public void RequireDeserialization(object obj) {
 				context.AssertDeserialization(obj);
 			}
 
-			internal object[] GetBuffer(SqlDeserializer deserializer) {
+			public bool IsDeserialized(object obj)
+			{
+				return context.IsDeserialized(obj);
+			}
+
+			internal object[] GetBuffer(SqlDeserializer deserializer)
+			{
 				object[] result;
 				if (!buffers.TryGetValue(deserializer, out result)) {
 					result = new object[deserializer.TypeInfo.Mapping.MemberCount];
@@ -179,12 +192,11 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 				return result;
 			}
 		}
-
 		private readonly SortedList<int, MemberConverter> columnConverters;
 		private readonly SqlDeserializationContext context;
 		private readonly Dictionary<NestedMemberConverter, SqlDeserializer> nestedDeserializers;
 		private readonly SqlDataReader reader;
-		private readonly SqlSerializationTypeInfo typeInfo;
+		private readonly ISerializationTypeInfo typeInfo;
 		private bool disposeReader;
 
 		internal SqlDeserializer(SqlDeserializationContext context, SqlDataReader reader, Type type, bool disposeReader) {
@@ -200,7 +212,7 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 			this.context = context;
 			this.reader = reader;
 			this.disposeReader = disposeReader;
-			typeInfo = SqlSerializationTypeInfo.Get(type);
+			typeInfo = context.GetSerializationTypeInfo(type);
 			foreach (MemberConverter converter in typeInfo.Mapping.Converters) {
 				NestedMemberConverter nestedConverter = converter as NestedMemberConverter;
 				if (nestedConverter != null) {
@@ -243,7 +255,7 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 		/// Gets the type information used for deserialization.
 		/// </summary>
 		/// <value>The type info.</value>
-		public SqlSerializationTypeInfo TypeInfo {
+		public ISerializationTypeInfo TypeInfo {
 			get {
 				return typeInfo;
 			}
@@ -307,16 +319,16 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 
 		internal IEnumerable<T> DeserializeInstancesInternal<T>(int maxRows, bool callConstructor, XmlNameTable nameTable) {
 			Debug.Assert(typeof(T).IsAssignableFrom(TypeInfo.InstanceType));
-			DeserializerContext context = new DeserializerContext(this.context, reader, callConstructor, nameTable);
+			DeserializerContext deserializerContext = new DeserializerContext(context, reader, callConstructor, nameTable);
 			while (maxRows > 0) {
 				if (!reader.Read()) {
 					break;
 				}
 				if (typeInfo.SimpleConverter != null) {
-					yield return (T)typeInfo.SimpleConverter.ProcessFromDb(context, 0);
+					yield return (T)typeInfo.SimpleConverter.ProcessFromDb(deserializerContext, 0);
 				} else {
 					InstanceOrigin instanceOrigin;
-					T instance = (T)CreateInstance(context, out instanceOrigin);
+					T instance = (T)CreateInstance(deserializerContext, out instanceOrigin);
 					if (instanceOrigin != InstanceOrigin.ResultSet) {
 						yield return instance;
 					}

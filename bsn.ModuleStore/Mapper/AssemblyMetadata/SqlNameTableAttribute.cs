@@ -27,29 +27,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
+
 using System;
 
-namespace bsn.ModuleStore.Mapper {
-	[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = true, Inherited = true)]
-	public sealed class SqlMappingAttribute: Attribute {
-		private readonly string sqlColumn;
-		private readonly string tableTypeColumn;
-
-		public SqlMappingAttribute(string sqlColumn, string tableTypeColumn) {
-			this.sqlColumn = sqlColumn;
-			this.tableTypeColumn = tableTypeColumn;
-		}
-
-		public string SqlColumn {
-			get {
-				return sqlColumn;
-			}
-		}
-
-		public string TableTypeColumn {
-			get {
-				return tableTypeColumn;
-			}
-		}
-	}
+namespace bsn.ModuleStore.Mapper.AssemblyMetadata {
+	/// <summary>
+	/// The SqlNameTableAttribute attribute is used to specify the XML nametable to use for XML-based return values.
+	/// </summary>
+	[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+	public sealed class SqlNameTableAttribute: Attribute {}
 }

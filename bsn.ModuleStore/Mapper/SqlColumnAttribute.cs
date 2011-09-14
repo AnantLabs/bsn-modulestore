@@ -27,36 +27,39 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
+
 using System;
 using System.ComponentModel;
 using System.Reflection;
 
+using bsn.ModuleStore.Mapper.Serialization;
+
 namespace bsn.ModuleStore.Mapper {
 	/// <summary>
-	/// The DbColumnAttribute is used to change the binding name on <see cref="ITypedDataReader"/> interfaces, or to specify the fields to be deserialized when the <see cref="DbDeserializer"/> is used.
+	/// The <see cref="SqlColumnAttribute"/> is used to change the binding name on <see cref="ITypedDataReader"/> interfaces, or to specify the fields to be deserialized when the <see cref="SqlDeserializer"/> is used.
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Field|AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
-	public sealed class SqlColumnAttribute: Attribute {
+	public class SqlColumnAttribute: Attribute {
 		/// <summary>
-		/// Get a single DbColumnAttribute instance.
+		/// Get a single <see cref="SqlColumnAttribute"/> instance.
 		/// </summary>
-		/// <param name="info">The <see cref="MemberInfo"/> to query for the DbColumnAttribute attribute.</param>
-		/// <param name="autoCreate">If true, a DbColumnAttribute is inferred from the MemberInfo when no attribute is found. Otherwise, null is returned in this situation.</param>
-		/// <returns>The DbColumnAttribute for the member.</returns>
-		public static SqlColumnAttribute GetColumnAttribute(MemberInfo info, bool autoCreate) {
-			if (info == null) {
-				throw new ArgumentNullException("info");
+		/// <param name="member">The <see cref="MemberInfo"/> to query for the <see cref="SqlColumnAttribute"/> attribute.</param>
+		/// <param name="autoCreate">If true, a <see cref="SqlColumnAttribute"/> is inferred from the MemberInfo when no attribute is found. Otherwise, null is returned in this situation.</param>
+		/// <returns>The <see cref="SqlColumnAttribute"/> for the member.</returns>
+		public static SqlColumnAttribute GetSqlColumnAttribute(MemberInfo member, bool autoCreate) {
+			if (member == null) {
+				throw new ArgumentNullException("member");
 			}
-			SqlColumnAttribute[] columnAttributes = (SqlColumnAttribute[])info.GetCustomAttributes(typeof(SqlColumnAttribute), true);
+			SqlColumnAttribute[] columnAttributes = (SqlColumnAttribute[])member.GetCustomAttributes(typeof(SqlColumnAttribute), true);
 			if (columnAttributes.Length > 0) {
 				SqlColumnAttribute result = columnAttributes[0];
 				if (string.IsNullOrEmpty(result.Name)) {
-					result = result.CloneWithName(info.Name);
+					result = result.CloneWithName(member.Name);
 				}
 				return result;
 			}
 			if (autoCreate) {
-				return new SqlColumnAttribute(info.Name);
+				return new SqlColumnAttribute(member.Name);
 			}
 			return null;
 		}
@@ -72,7 +75,7 @@ namespace bsn.ModuleStore.Mapper {
 		public SqlColumnAttribute(): this(null) {}
 
 		/// <summary>
-		/// Create a new DbColumnAttribute.
+		/// Create a new <see cref="SqlColumnAttribute"/>.
 		/// </summary>
 		/// <param name="name">The DB column name to bind to.</param>
 		public SqlColumnAttribute([Localizable(false)] string name) {
@@ -125,7 +128,7 @@ namespace bsn.ModuleStore.Mapper {
 			}
 		}
 
-		internal SqlColumnAttribute CloneWithName(string newName) {
+		public virtual SqlColumnAttribute CloneWithName(string newName) {
 			SqlColumnAttribute result = (SqlColumnAttribute)MemberwiseClone();
 			result.name = newName;
 			return result;

@@ -59,21 +59,44 @@
     <Compile Include="Mapper\CachePolicy.cs" />
     <Compile Include="Mapper\ICallDeserializationInfo.cs" />
     <Compile Include="Mapper\IMetadataProvider.cs" />
+    <Compile Include="Mapper\InterfaceMetadata\InterfaceMetadataProvider.cs" />
+    <Compile Include="Mapper\InterfaceMetadata\SqlArgAttribute.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Mapper\InterfaceMetadata\SqlCallInfo.cs" />
+    <Compile Include="Mapper\InterfaceMetadata\SqlCallParameterInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Mapper\InterfaceMetadata\SqlCallProcedureInfo.cs" />
+    <Compile Include="Mapper\InterfaceMetadata\SqlProcAttribute.cs" />
+    <Compile Include="Mapper\InterfaceMetadata\StructuredParameterSchema.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Mapper\ISqlCallInfo.cs" />
     <Compile Include="Mapper\IVersioned.cs" />
+    <Compile Include="Mapper\MemberInfoExtensionMethods.cs" />
     <Compile Include="Mapper\Serialization\CachedMemberConverter.cs" />
     <Compile Include="Mapper\ConnectionProvider.cs" />
     <Compile Include="Mapper\Serialization\ConvertibleMemberConverter.cs" />
     <Compile Include="Mapper\Serialization\DateTimeMemberConverter.cs" />
     <Compile Include="Mapper\Serialization\DateTimeOffsetMemberConverter.cs" />
+    <Compile Include="Mapper\Serialization\IDeserializerContext.cs" />
+    <Compile Include="Mapper\Serialization\IMemberConverter.cs" />
+    <Compile Include="Mapper\Serialization\ISerializationTypeInfo.cs" />
+    <Compile Include="Mapper\Serialization\ISerializationTypeInfoProvider.cs" />
+    <Compile Include="Mapper\Serialization\ISerializationTypeMappingProvider.cs" />
+    <Compile Include="Mapper\Serialization\ISerializationTypeMapping.cs" />
     <Compile Include="Mapper\Serialization\SqlDeserializationContext.cs" />
     <Compile Include="Mapper\Serialization\EnumMemberConverter.cs" />
     <Compile Include="Mapper\Serialization\MembersKey.cs" />
     <Compile Include="Mapper\Serialization\MembersMethods.cs" />
     <Compile Include="Mapper\Serialization\NestedListMemberConverter.cs" />
     <Compile Include="Mapper\Serialization\SqlColumnInfo.cs" />
-    <Compile Include="Mapper\Serialization\SqlSerializationTypeInfo.cs" />
-    <Compile Include="Mapper\Serialization\SqlSerializationTypeMapping.cs" />
+    <Compile Include="Mapper\Serialization\SerializationTypeInfo.cs" />
+    <Compile Include="Mapper\Serialization\SerializationTypeMapping.cs" />
+    <Compile Include="Mapper\Serialization\SerializationTypeInfoProvider.cs" />
+    <Compile Include="Mapper\Serialization\SerializationTypeMappingProvider.cs" />
+    <Compile Include="Mapper\InterfaceMetadata\StructuredParameterAttribute.cs" />
     <Compile Include="Mapper\Serialization\StructuredParameterReader.cs" />
     <Compile Include="Mapper\DistinctInstanceProvider.cs" />
     <Compile Include="Mapper\IConnectionProvider.cs" />
@@ -86,12 +109,15 @@
     <Compile Include="Mapper\InstanceCacheAttribute.cs" />
     <Compile Include="Mapper\InstanceManager.cs" />
     <Compile Include="Mapper\InstanceOrigin.cs" />
-    <Compile Include="Mapper\Serialization\StructuredParameterSchema.cs">
+    <Compile Include="Mapper\AssemblyMetadata\StructuredParameterSchema.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Mapper\Serialization\StructuredParameterSchemaBase.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Mapper\Serialization\XNodeMemberConverter.cs" />
     <Compile Include="Mapper\Serialization\XPathNavigableMemberConverter.cs" />
-    <Compile Include="Mapper\SqlCallParameterBase.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlCallParameterBase.cs" />
     <Compile Include="Mapper\ManagedInstanceProvider.cs" />
     <Compile Include="Mapper\MetadataBase.cs" />
     <Compile Include="Mapper\MetadataBoolean.cs" />
@@ -125,8 +151,9 @@
     <Compile Include="Mapper\Serialization\XmlReaderMemberConverter.cs" />
     <Compile Include="Mapper\Serialization\XmlReaderMemberConverterBase.cs" />
     <Compile Include="Mapper\Serialization\XPathDocumentMemberConverter.cs" />
-    <Compile Include="Mapper\SqlMappingAttribute.cs" />
-    <Compile Include="Mapper\SqlParameterAttribute.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlMappingAttribute.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlParameterAttribute.cs" />
+    <Compile Include="Mapper\TypeExtensionMethods.cs" />
     <Compile Include="Mapper\VersionedInstance.cs" />
     <Compile Include="ModuleDatabase.cs" />
     <Compile Include="DatabaseType.cs" />
@@ -136,19 +163,19 @@
     <Compile Include="Bootstrapper\ModuleInstanceCache.cs" />
     <Compile Include="Mapper\DataReaderProxy.cs" />
     <Compile Include="Mapper\IStoredProcedures.cs" />
-    <Compile Include="Mapper\SqlCallInfo.cs" />
-    <Compile Include="Mapper\SqlCallParameterInfo.cs" />
-    <Compile Include="Mapper\SqlCallProcedureInfo.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlCallInfo.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlCallParameterInfo.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlCallProcedureInfo.cs" />
     <Compile Include="Mapper\SqlCallProxy.cs" />
     <Compile Include="SqlAssemblyAttribute.cs" />
     <Compile Include="Mapper\SqlColumnAttribute.cs" />
     <Compile Include="Mapper\SqlDeserializeAttribute.cs" />
     <Compile Include="Mapper\Serialization\SqlDeserializer.cs" />
-    <Compile Include="Mapper\SqlNameTableAttribute.cs" />
-    <Compile Include="Mapper\SqlCallParameterConstant.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlNameTableAttribute.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlCallParameterConstant.cs" />
     <Compile Include="SqlExceptionMappingAttribute.cs" />
     <Compile Include="SqlManifestResourceAttribute.cs" />
-    <Compile Include="Mapper\SqlProcedureAttribute.cs" />
+    <Compile Include="Mapper\AssemblyMetadata\SqlProcedureAttribute.cs" />
     <Compile Include="Mapper\SqlReturnValue.cs" />
     <Compile Include="Mapper\ISqlDeserializationHook.cs" />
     <Compile Include="Mapper\ITypedDataReader.cs" />
@@ -194,6 +221,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Sql\UserObjectScripter.xslt" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

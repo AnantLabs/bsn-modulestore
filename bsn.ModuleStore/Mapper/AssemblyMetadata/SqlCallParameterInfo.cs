@@ -27,6 +27,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -44,7 +45,7 @@ using bsn.ModuleStore.Mapper.Serialization;
 using bsn.ModuleStore.Sql;
 using bsn.ModuleStore.Sql.Script;
 
-namespace bsn.ModuleStore.Mapper {
+namespace bsn.ModuleStore.Mapper.AssemblyMetadata {
 	internal class SqlCallParameterInfo: SqlCallParameterBase {
 		private static bool GetParameterNullable(ParameterInfo param) {
 			Type parameterType = param.ParameterType;
@@ -71,17 +72,19 @@ namespace bsn.ModuleStore.Mapper {
 
 		private static bool GetParameterEnumerable(ParameterInfo param) {
 			Type structuredType;
-			return SqlSerializationTypeInfo.TryGetIEnumerableElementType(param.ParameterType, out structuredType);
+			return param.ParameterType.TryGetIEnumerableElementType(out structuredType);
 		}
 
 		private readonly ParameterInfo parameterInfo;
 		private readonly StructuredParameterSchema structuredSchema;
 
-		public SqlCallParameterInfo(ParameterInfo param, ProcedureParameter script): base(script, GetParameterDirection(param), GetParameterNullable(param), GetParameterEnumerable(param)) {
+		public SqlCallParameterInfo(ISerializationTypeInfoProvider serializationTypeInfoProvider, ParameterInfo param, ProcedureParameter script, ISerializationTypeMappingProvider typeMappingProvider)
+			: base(script, GetParameterDirection(param), GetParameterNullable(param), GetParameterEnumerable(param))
+		{
 			parameterInfo = param;
 			if (SqlType == SqlDbType.Structured) {
 				Type structuredType;
-				if (!SqlSerializationTypeInfo.TryGetIEnumerableElementType(param.ParameterType, out structuredType)) {
+				if (!param.ParameterType.TryGetIEnumerableElementType(out structuredType)) {
 					throw new ArgumentException("The given parameter must implement IEnumerable<> in order to be used as SQL structured parameter");
 				}
 				CreateTypeAsTableStatement createTableTypeScript;
@@ -89,13 +92,13 @@ namespace bsn.ModuleStore.Mapper {
 					throw new ArgumentException(string.Format("The given structured parameter table type {0} cannot be found in the inventory", script.ParameterTypeName));
 				}
 				IDictionary<string, SqlColumnInfo> columnInfos;
-				SqlSerializationTypeInfo info = SqlSerializationTypeInfo.Get(structuredType);
+				ISerializationTypeInfo info = serializationTypeInfoProvider.GetSerializationTypeInfo(structuredType);
 				if (info.SimpleConverter != null) {
 					string columnName = createTableTypeScript.TableDefinitions.OfType<TableColumnDefinition>().First(d => d.ColumnDefinition is TypedColumnDefinition).ColumnName.Value;
 					columnInfos = new Dictionary<string, SqlColumnInfo>(1);
-					columnInfos.Add(columnName, new SqlColumnInfo(structuredType, columnName, info.SimpleConverter));
+					columnInfos.Add(columnName, new SqlColumnInfo(typeMappingProvider.GetMapping(structuredType), columnName, info.SimpleConverter));
 				} else {
-					columnInfos = SqlSerializationTypeMapping.Get(structuredType).Columns;
+					columnInfos = typeMappingProvider.GetMapping(structuredType).Columns;
 					Attribute[] mappingAttributes = Attribute.GetCustomAttributes(param, typeof(SqlMappingAttribute), true);
 					if ((mappingAttributes != null) && (mappingAttributes.Length > 0)) {
 						IDictionary<string, SqlColumnInfo> mappedColumnInfos = new Dictionary<string, SqlColumnInfo>(columnInfos);

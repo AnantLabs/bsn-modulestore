@@ -27,37 +27,41 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  
+
 using System;
 using System.Data;
 using System.Reflection;
 
 namespace bsn.ModuleStore.Mapper.Serialization {
-	internal class SqlColumnInfo {
-		private readonly Type clrType;
-		private readonly MemberConverter converter;
+	public class SqlColumnInfo {
+		private readonly IMemberConverter converter;
 		private readonly MemberInfo memberInfo;
 		private readonly string name;
-		private readonly string userDefinedTypeName;
+		private readonly ISerializationTypeMapping typeMapping;
 
-		public SqlColumnInfo(Type memberType, string columnName, MemberConverter converter) {
+		public SqlColumnInfo(ISerializationTypeMapping typeMapping, string columnName, IMemberConverter converter) {
 			if (string.IsNullOrEmpty(columnName)) {
 				throw new ArgumentNullException("columnName");
 			}
 			if (converter == null) {
 				throw new ArgumentNullException("converter");
 			}
+			if (typeMapping == null) {
+				throw new ArgumentNullException("typeMapping");
+			}
 			name = columnName;
-			clrType = Nullable.GetUnderlyingType(memberType) ?? memberType;
-			userDefinedTypeName = null;
 			this.converter = converter;
+			this.typeMapping = typeMapping;
 		}
 
-		public SqlColumnInfo(MemberInfo memberInfo, string columnName, MemberConverter converter): this(SqlSerializationTypeMapping.GetMemberType(memberInfo), columnName, converter) {
-#warning SqlSerializationTypeMapping.GetClrUserDefinedTypeName(memberInfo.DeclaringType, columnAttribute);
+		public SqlColumnInfo(MemberInfo memberInfo, string columnName, IMemberConverter converter, ISerializationTypeMapping typeMapping): this(typeMapping, columnName, converter) {
+			if (memberInfo == null) {
+				throw new ArgumentNullException("memberInfo");
+			}
 			this.memberInfo = memberInfo;
 		}
 
-		public MemberConverter Converter {
+		public IMemberConverter Converter {
 			get {
 				return converter;
 			}
@@ -65,7 +69,7 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 
 		public SqlDbType DbType {
 			get {
-				return SqlSerializationTypeMapping.GetTypeMapping(clrType);
+				return typeMapping.DbType;
 			}
 		}
 
@@ -78,12 +82,6 @@ namespace bsn.ModuleStore.Mapper.Serialization {
 		public string Name {
 			get {
 				return name;
-			}
-		}
-
-		public string UserDefinedTypeName {
-			get {
-				return userDefinedTypeName;
 			}
 		}
 	}
